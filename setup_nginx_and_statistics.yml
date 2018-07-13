@@ -1,0 +1,48 @@
+---
+- hosts: webserver
+  gather_facts: true
+  remote_user: karl
+  become: yes
+  vars:
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      when: ansible_distribution == 'Debian'
+      notify:
+        - start nginx
+
+    - name: Install Nginx
+      yum:
+        name: nginx
+        state: present
+      when: ansible_distribution == 'RedHat'
+      notify:
+        - start nginx
+
+    - name: Open Web Server Port
+      ufw:
+        rule: allow
+        port: http
+      when: ansible_distribution == 'Debian'
+
+    - name: Open Web Server Port
+      firewalld:
+        service: nginx
+        permanent: true
+        state: enabled
+      when: ansible_distribution == 'RedHat'
+
+    - name: Upload index.html file
+      copy:
+        src: /site/newsite_test/
+        dest: /var/www/html/
+        mode: 0644
+
+  handlers:
+    - name: start nginx
+      service:
+        name: nginx
+        enabled: yes
+        state: started
